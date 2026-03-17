@@ -175,13 +175,36 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 检查并清理端口占用
-echo "Checking port 8000..."
-if lsof -i :8000 > /dev/null; then
-    echo "Port 8000 is already in use. Killing process..."
-    lsof -t -i :8000 | xargs kill -9
-    echo "Process killed."
+# 强制清理端口占用
+echo "Forcefully cleaning port 8000..."
+# 使用netstat和kill命令确保端口被释放
+for pid in $(netstat -tulpn 2>/dev/null | grep ':8000' | awk '{print $7}' | cut -d'/' -f1); do
+    if [ -n "$pid" ]; then
+        echo "Killing process $pid using port 8000..."
+        kill -9 $pid 2>/dev/null || true
+    fi
+done
+# 再次使用lsof确保端口被释放
+if lsof -i :8000 > /dev/null 2>&1; then
+    echo "Port 8000 is still in use. Killing all processes..."
+    lsof -t -i :8000 | xargs kill -9 2>/dev/null || true
 fi
+echo "Port 8000 cleaned."
+
+# 强制清理celery相关进程
+echo "Cleaning up existing Celery processes..."
+ps aux | grep celery | grep -v grep | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+
+# 强制清理celerybeat-schedule文件
+echo "Forcefully cleaning celerybeat-schedule file..."
+# 先尝试正常删除
+rm -f celerybeat-schedule 2>/dev/null
+# 如果删除失败，使用更强制的方式
+if [ -f "celerybeat-schedule" ]; then
+    echo "Normal deletion failed, using force..."
+    sudo rm -f celerybeat-schedule 2>/dev/null || true
+fi
+echo "celerybeat-schedule file cleaned."
 
 echo "Starting Django development server..."
 $PYTHON3 manage.py runserver 0.0.0.0:8000 &
@@ -190,13 +213,6 @@ SERVER_PID=$!
 echo "Starting Celery worker..."
 $PYTHON3 -m celery -A DjangoDemo worker --loglevel=info &
 CELERY_WORKER_PID=$!
-
-# 清理celerybeat-schedule文件
-echo "Cleaning celerybeat-schedule file..."
-if [ -f "celerybeat-schedule" ]; then
-    rm -f celerybeat-schedule
-    echo "celerybeat-schedule file removed."
-fi
 
 echo "Starting Celery beat..."
 $PYTHON3 -m celery -A DjangoDemo beat --loglevel=info &
