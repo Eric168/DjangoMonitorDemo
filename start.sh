@@ -4,6 +4,18 @@
 
 echo "Starting DjangoDemo project setup..."
 
+# 拉取最新代码
+echo "Pulling latest code from repository..."
+if [ -d ".git" ]; then
+    git fetch
+    git pull origin master
+    if [ $? -ne 0 ]; then
+        echo "Failed to pull code. Continuing with existing code."
+    fi
+else
+    echo "Not a git repository. Skipping code pull."
+fi
+
 # 创建日志目录
 mkdir -p logs
 
