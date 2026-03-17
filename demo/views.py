@@ -60,14 +60,19 @@ def error_log(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @csrf_exempt
-def http_error(request):
-    """Return HTTP error for testing"""
+def http_error_500(request):
+    """Return 500 Internal Server Error for testing"""
     if request.method == 'GET':
         # Return 500 Internal Server Error
         logger.error('Returning 500 Internal Server Error for testing')
         return JsonResponse({'error': 'Internal Server Error'}, status=500)
-    elif request.method == 'POST':
-        # Return 403 Forbidden
-        logger.error('Returning 403 Forbidden for testing')
-        return JsonResponse({'error': 'Forbidden'}, status=403)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def http_error_404(request):
+    """Return 404 Not Found for testing"""
+    if request.method == 'GET':
+        # Return 404 Not Found
+        logger.error('Returning 404 Not Found for testing')
+        return JsonResponse({'error': 'Not Found'}, status=404)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
