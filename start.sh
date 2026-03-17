@@ -8,7 +8,7 @@ echo "Starting DjangoDemo project setup..."
 mkdir -p logs
 
 echo "Installing dependencies..."
-pip3 install -r requirements.txt
+/usr/local/bin/pip3 install -r requirements.txt
 
 if [ $? -ne 0 ]; then
     echo "Failed to install dependencies. Exiting."
@@ -16,7 +16,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Running database migrations..."
-python3 manage.py migrate
+/usr/local/bin/python3 manage.py migrate
 
 if [ $? -ne 0 ]; then
     echo "Failed to run migrations. Exiting."
@@ -24,15 +24,15 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Starting Django development server..."
-python3 manage.py runserver 0.0.0.0:8000 &
+/usr/local/bin/python3 manage.py runserver 0.0.0.0:8000 &
 SERVER_PID=$!
 
 echo "Starting Celery worker..."
-celery -A DjangoDemo worker --loglevel=info &
+/usr/local/bin/python3 -m celery -A DjangoDemo worker --loglevel=info &
 CELERY_WORKER_PID=$!
 
 echo "Starting Celery beat..."
-celery -A DjangoDemo beat --loglevel=info &
+/usr/local/bin/python3 -m celery -A DjangoDemo beat --loglevel=info &
 CELERY_BEAT_PID=$!
 
 echo "All services started successfully!"
