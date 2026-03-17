@@ -7,13 +7,28 @@ echo "Starting DjangoDemo project setup..."
 # 拉取最新代码
 echo "Pulling latest code from repository..."
 if [ -d ".git" ]; then
+    echo "Current directory is a git repository."
+    echo "Checking remote repository..."
+    git remote -v
+    echo "Fetching latest changes..."
     git fetch
-    git pull origin master
     if [ $? -ne 0 ]; then
-        echo "Failed to pull code. Continuing with existing code."
+        echo "Failed to fetch changes. Error code: $?"
+    else
+        echo "Fetch successful."
+        echo "Pulling from origin master..."
+        git pull origin master
+        if [ $? -ne 0 ]; then
+            echo "Failed to pull code. Error code: $?"
+        else
+            echo "Code pulled successfully."
+        fi
     fi
 else
     echo "Not a git repository. Skipping code pull."
+    echo "Current directory: $(pwd)"
+    echo "Directory contents:"
+    ls -la
 fi
 
 # 创建日志目录
