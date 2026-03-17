@@ -175,6 +175,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# 检查并清理端口占用
+echo "Checking port 8000..."
+if lsof -i :8000 > /dev/null; then
+    echo "Port 8000 is already in use. Killing process..."
+    lsof -t -i :8000 | xargs kill -9
+    echo "Process killed."
+fi
+
 echo "Starting Django development server..."
 $PYTHON3 manage.py runserver 0.0.0.0:8000 &
 SERVER_PID=$!
@@ -182,6 +190,13 @@ SERVER_PID=$!
 echo "Starting Celery worker..."
 $PYTHON3 -m celery -A DjangoDemo worker --loglevel=info &
 CELERY_WORKER_PID=$!
+
+# 清理celerybeat-schedule文件
+echo "Cleaning celerybeat-schedule file..."
+if [ -f "celerybeat-schedule" ]; then
+    rm -f celerybeat-schedule
+    echo "celerybeat-schedule file removed."
+fi
 
 echo "Starting Celery beat..."
 $PYTHON3 -m celery -A DjangoDemo beat --loglevel=info &
