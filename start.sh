@@ -7,7 +7,7 @@ echo "Starting DjangoDemo project setup..."
 # 创建日志目录
 mkdir -p logs
 
-# 检查并安装Python 3
+# 检查并安装Python 3和pip3
 check_and_install_python() {
     echo "Checking Python 3 installation..."
     if ! which python3 > /dev/null; then
@@ -17,11 +17,11 @@ check_and_install_python() {
         if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
             # RHEL or Amazon Linux
             sudo yum update -y
-            sudo yum install python3 python3-pip -y
+            sudo yum install python3 -y
         elif [ -f /etc/debian_version ]; then
             # Debian or Ubuntu
             sudo apt-get update -y
-            sudo apt-get install python3 python3-pip -y
+            sudo apt-get install python3 -y
         else
             echo "Unsupported Linux distribution. Please install Python 3 manually."
             exit 1
@@ -31,6 +31,27 @@ check_and_install_python() {
     else
         echo "Python 3 is already installed."
     fi
+    
+    # 确保pip3安装
+    echo "Checking pip3 installation..."
+    if ! which pip3 > /dev/null; then
+        echo "pip3 not found. Installing..."
+        
+        if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
+            # RHEL or Amazon Linux
+            sudo yum install python3-pip -y
+        elif [ -f /etc/debian_version ]; then
+            # Debian or Ubuntu
+            sudo apt-get install python3-pip -y
+        else
+            echo "Unsupported Linux distribution. Please install pip3 manually."
+            exit 1
+        fi
+        
+        echo "pip3 installed successfully."
+    else
+        echo "pip3 is already installed."
+    fi
 }
 
 # 执行Python检查和安装
@@ -39,16 +60,30 @@ check_and_install_python
 # 检查并安装Redis
 check_and_install_redis() {
     echo "Checking Redis installation..."
-    if ! which redis-server > /dev/null; then
+    if ! which redis-server > /dev/null && ! which redis-cli > /dev/null; then
         echo "Redis not found. Installing..."
         
         # 检测系统类型
-        if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
-            # RHEL or Amazon Linux
+        if [ -f /etc/redhat-release ]; then
+            # RHEL
             sudo yum update -y
             sudo yum install redis -y
             sudo systemctl start redis
             sudo systemctl enable redis
+        elif [ -f /etc/amazon-linux-release ]; then
+            # Amazon Linux
+            sudo yum update -y
+            # 尝试安装redis6或redis
+            if sudo yum install redis6 -y; then
+                sudo systemctl start redis6
+                sudo systemctl enable redis6
+            elif sudo yum install redis -y; then
+                sudo systemctl start redis
+                sudo systemctl enable redis
+            else
+                echo "Failed to install Redis. Please install manually."
+                # 继续执行，因为Redis是可选的（开发环境）
+            fi
         elif [ -f /etc/debian_version ]; then
             # Debian or Ubuntu
             sudo apt-get update -y
@@ -57,17 +92,19 @@ check_and_install_redis() {
             sudo systemctl enable redis-server
         else
             echo "Unsupported Linux distribution. Please install Redis manually."
-            exit 1
+            # 继续执行，因为Redis是可选的（开发环境）
         fi
         
-        echo "Redis installed successfully."
+        echo "Redis installation completed."
     else
         echo "Redis is already installed."
         # 确保Redis服务正在运行
-        if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
-            sudo systemctl start redis
+        if [ -f /etc/redhat-release ]; then
+            sudo systemctl start redis 2>/dev/null || true
+        elif [ -f /etc/amazon-linux-release ]; then
+            sudo systemctl start redis6 2>/dev/null || sudo systemctl start redis 2>/dev/null || true
         elif [ -f /etc/debian_version ]; then
-            sudo systemctl start redis-server
+            sudo systemctl start redis-server 2>/dev/null || true
         fi
     fi
 }
