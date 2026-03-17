@@ -7,6 +7,74 @@ echo "Starting DjangoDemo project setup..."
 # 创建日志目录
 mkdir -p logs
 
+# 检查并安装Python 3
+check_and_install_python() {
+    echo "Checking Python 3 installation..."
+    if ! which python3 > /dev/null; then
+        echo "Python 3 not found. Installing..."
+        
+        # 检测系统类型
+        if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
+            # RHEL or Amazon Linux
+            sudo yum update -y
+            sudo yum install python3 python3-pip -y
+        elif [ -f /etc/debian_version ]; then
+            # Debian or Ubuntu
+            sudo apt-get update -y
+            sudo apt-get install python3 python3-pip -y
+        else
+            echo "Unsupported Linux distribution. Please install Python 3 manually."
+            exit 1
+        fi
+        
+        echo "Python 3 installed successfully."
+    else
+        echo "Python 3 is already installed."
+    fi
+}
+
+# 执行Python检查和安装
+check_and_install_python
+
+# 检查并安装Redis
+check_and_install_redis() {
+    echo "Checking Redis installation..."
+    if ! which redis-server > /dev/null; then
+        echo "Redis not found. Installing..."
+        
+        # 检测系统类型
+        if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
+            # RHEL or Amazon Linux
+            sudo yum update -y
+            sudo yum install redis -y
+            sudo systemctl start redis
+            sudo systemctl enable redis
+        elif [ -f /etc/debian_version ]; then
+            # Debian or Ubuntu
+            sudo apt-get update -y
+            sudo apt-get install redis-server -y
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+        else
+            echo "Unsupported Linux distribution. Please install Redis manually."
+            exit 1
+        fi
+        
+        echo "Redis installed successfully."
+    else
+        echo "Redis is already installed."
+        # 确保Redis服务正在运行
+        if [ -f /etc/redhat-release ] || [ -f /etc/amazon-linux-release ]; then
+            sudo systemctl start redis
+        elif [ -f /etc/debian_version ]; then
+            sudo systemctl start redis-server
+        fi
+    fi
+}
+
+# 执行Redis检查和安装
+check_and_install_redis
+
 # 动态获取python3和pip3路径
 PYTHON3=$(which python3)
 PIP3=$(which pip3)
