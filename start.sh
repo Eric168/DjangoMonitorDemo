@@ -4,9 +4,17 @@
 
 echo "Starting DjangoDemo project setup..."
 
-# 拉取最新代码
-echo "Pulling latest code from repository..."
-if [ -d ".git" ]; then
+# 确保当前目录是git仓库
+if [ ! -d ".git" ]; then
+    echo "Initializing git repository..."
+    git init
+    git remote add origin git@github.com:Eric168/DjangoMonitorDemo.git
+    git fetch
+    git checkout master
+    echo "Git repository initialized and checked out to master branch."
+else
+    # 拉取最新代码
+    echo "Pulling latest code from repository..."
     echo "Current directory is a git repository."
     echo "Checking remote repository..."
     git remote -v
@@ -24,11 +32,6 @@ if [ -d ".git" ]; then
             echo "Code pulled successfully."
         fi
     fi
-else
-    echo "Not a git repository. Skipping code pull."
-    echo "Current directory: $(pwd)"
-    echo "Directory contents:"
-    ls -la
 fi
 
 # 创建日志目录
