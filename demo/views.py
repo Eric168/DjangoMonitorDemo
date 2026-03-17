@@ -49,3 +49,25 @@ def item_detail(request, item_id):
         item.delete()
         logger.info(f'Deleted item: {item.name}')
         return JsonResponse({'message': 'Item deleted'})
+
+@csrf_exempt
+def error_log(request):
+    """Generate error level log for testing"""
+    if request.method == 'GET':
+        # Log an error message
+        logger.error('This is a test error log message')
+        return JsonResponse({'message': 'Error log generated successfully'})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def http_error(request):
+    """Return HTTP error for testing"""
+    if request.method == 'GET':
+        # Return 500 Internal Server Error
+        logger.error('Returning 500 Internal Server Error for testing')
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)
+    elif request.method == 'POST':
+        # Return 403 Forbidden
+        logger.error('Returning 403 Forbidden for testing')
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
