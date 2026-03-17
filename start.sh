@@ -7,8 +7,25 @@ echo "Starting DjangoDemo project setup..."
 # 创建日志目录
 mkdir -p logs
 
+# 动态获取python3和pip3路径
+PYTHON3=$(which python3)
+PIP3=$(which pip3)
+
+if [ -z "$PYTHON3" ]; then
+    echo "python3 not found. Exiting."
+    exit 1
+fi
+
+if [ -z "$PIP3" ]; then
+    echo "pip3 not found. Exiting."
+    exit 1
+fi
+
+echo "Using Python: $PYTHON3"
+echo "Using Pip: $PIP3"
+
 echo "Installing dependencies..."
-/usr/local/bin/pip3 install -r requirements.txt
+$PIP3 install -r requirements.txt
 
 if [ $? -ne 0 ]; then
     echo "Failed to install dependencies. Exiting."
@@ -16,7 +33,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Running database migrations..."
-/usr/local/bin/python3 manage.py migrate
+$PYTHON3 manage.py migrate
 
 if [ $? -ne 0 ]; then
     echo "Failed to run migrations. Exiting."
@@ -24,15 +41,15 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Starting Django development server..."
-/usr/local/bin/python3 manage.py runserver 0.0.0.0:8000 &
+$PYTHON3 manage.py runserver 0.0.0.0:8000 &
 SERVER_PID=$!
 
 echo "Starting Celery worker..."
-/usr/local/bin/python3 -m celery -A DjangoDemo worker --loglevel=info &
+$PYTHON3 -m celery -A DjangoDemo worker --loglevel=info &
 CELERY_WORKER_PID=$!
 
 echo "Starting Celery beat..."
-/usr/local/bin/python3 -m celery -A DjangoDemo beat --loglevel=info &
+$PYTHON3 -m celery -A DjangoDemo beat --loglevel=info &
 CELERY_BEAT_PID=$!
 
 echo "All services started successfully!"
