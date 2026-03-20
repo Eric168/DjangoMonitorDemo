@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from datetime import datetime
 from .models import Item
 import logging
 
@@ -75,4 +76,16 @@ def http_error_404(request):
         # Return 404 Not Found
         logger.error('Returning 404 Not Found for testing')
         return JsonResponse({'error': 'Not Found'}, status=404)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def health_check(request):
+    """Health check endpoint for monitoring"""
+    if request.method == 'GET':
+        logger.info('Health check requested')
+        return JsonResponse({
+            'status': 'ok',
+            'message': 'Service is healthy',
+            'timestamp': datetime.now().isoformat()
+        })
     return JsonResponse({'error': 'Method not allowed'}, status=405)
