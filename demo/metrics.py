@@ -1,6 +1,8 @@
 import statsd
 import time
 import logging
+from functools import wraps
+from django.http import HttpRequest
 
 logger = logging.getLogger(__name__)
 
@@ -40,22 +42,49 @@ class MetricsClient:
             except Exception as e:
                 logger.warning(f'Failed to record timing metric {metric_name}: {e}')
     
-    def timing_decorator(self, metric_name):
-        """时间装饰器"""
+    def api_metrics(self, metric_prefix):
+        """API接口指标装饰器"""
         def decorator(func):
+            @wraps(func)
             def wrapper(*args, **kwargs):
                 start_time = time.time()
+                request = None
+                
+                # 从参数中获取request对象
+                for arg in args:
+                    if isinstance(arg, HttpRequest):
+                        request = arg
+                        break
+                
+                # 构建指标名称
+                method = request.method.lower() if request else 'unknown'
+                metric_base = f'{metric_prefix}.{method}'
+                
                 try:
+                    # 执行原函数
                     result = func(*args, **kwargs)
-                    duration = (time.time() - start_time) * 1000  # 转换为毫秒
-                    self.timing(metric_name, duration)
+                    
+                    # 计算耗时
+                    duration = (time.time() - start_time) * 1000
+                    
+                    # 上报成功指标
+                    self.increment(metric_base)
+                    self.timing(f'{metric_base}.duration', duration)
+                    
                     return result
                 except Exception as e:
+                    # 计算错误耗时
                     duration = (time.time() - start_time) * 1000
-                    self.timing(f'{metric_name}.error', duration)
+                    
+                    # 上报错误指标
+                    self.increment(f'{metric_base}.error')
+                    self.timing(f'{metric_base}.error.duration', duration)
+                    
+                    # 重新抛出异常
                     raise
             return wrapper
         return decorator
 
 # 创建全局MetricsClient实例
 metrics = MetricsClient()
+
