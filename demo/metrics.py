@@ -84,6 +84,49 @@ class MetricsClient:
                     raise
             return wrapper
         return decorator
+    
+    def admin_metrics(self, metric_prefix):
+        """管理后台指标装饰器"""
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                start_time = time.time()
+                request = None
+                
+                # 从参数中获取request对象
+                for arg in args:
+                    if isinstance(arg, HttpRequest):
+                        request = arg
+                        break
+                
+                # 构建指标名称
+                method = request.method.lower() if request else 'unknown'
+                metric_base = f'admin.{metric_prefix}.{method}'
+                
+                try:
+                    # 执行原函数
+                    result = func(*args, **kwargs)
+                    
+                    # 计算耗时
+                    duration = (time.time() - start_time) * 1000
+                    
+                    # 上报成功指标
+                    self.increment(metric_base)
+                    self.timing(f'{metric_base}.duration', duration)
+                    
+                    return result
+                except Exception as e:
+                    # 计算错误耗时
+                    duration = (time.time() - start_time) * 1000
+                    
+                    # 上报错误指标
+                    self.increment(f'{metric_base}.error')
+                    self.timing(f'{metric_base}.error.duration', duration)
+                    
+                    # 重新抛出异常
+                    raise
+            return wrapper
+        return decorator
 
 # 创建全局MetricsClient实例
 metrics = MetricsClient()
