@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from .metrics import metrics
 
+# 先取消注册内置的 GroupAdmin
+admin.site.unregister(Group)
+
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
     """自定义 Group 管理后台，添加 StatsD 指标上报"""
